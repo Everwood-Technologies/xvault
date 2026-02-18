@@ -21,10 +21,11 @@
   },
   "dependencies": {
     "@noble/curves": "latest",
+    "@vercel/ncc": "0.34.0",
     "argon2": "latest",
     "argon2-browser": "latest",
     "commander": "latest",
-    "@vercel/ncc": "0.34.0",
+    "hotpocket-js-client": "^0.5.7",
     "hotpocket-nodejs-contract": "^0.7.0",
     "ripple-keypairs": "latest",
     "secrets.js-grempe": "latest",

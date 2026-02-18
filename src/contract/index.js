@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import crypto from "node:crypto";
+import fs from "node:fs";
 import { VaultState } from "./state.js";
 import { loadStateFromFs, saveStateToFs } from "./stateStore.js";
 import { assertValidCid, buildGatewayFetchUrl } from "./cidUtils.js";
@@ -27,6 +28,24 @@ const state = new VaultState(loadStateFromFs(DEFAULT_STATE_FILE));
 let limiter = { roundKey: null, perAddress: new Map() };
 
 export async function handleOperation(op, deps = {}, runtimeContext = {}) {
+  // #region agent log
+  fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      runId: "pre-fix-1",
+      hypothesisId: "H5",
+      location: "src/contract/index.js:29",
+      message: "handleOperation entry",
+      data: {
+        opType: op?.type ?? null,
+        hasPayload: !!op?.payload,
+        opKeys: op && typeof op === "object" ? Object.keys(op) : []
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+  // #endregion
   if (!op || typeof op !== "object") fail("Operation payload is required.", "INVALID_INPUT");
   const type = op.type;
   const payload = op.payload ?? {};
@@ -67,6 +86,25 @@ export async function handleOperation(op, deps = {}, runtimeContext = {}) {
 }
 
 async function createVaultHandler(payload, deps, roundKey) {
+  // #region agent log
+  fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      runId: "pre-fix-1",
+      hypothesisId: "H3",
+      location: "src/contract/index.js:69",
+      message: "createVaultHandler entry",
+      data: {
+        owner: payload?.owner ?? null,
+        vaultType: payload?.type ?? "individual",
+        hasSignature: typeof payload?.signature === "string",
+        hasSignerPublicKey: typeof payload?.signerPublicKey === "string"
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+  // #endregion
   const vaultType = payload.type ?? "individual";
   if (vaultType === "team") {
     return createTeamVaultHandler(payload, deps, roundKey);
@@ -97,6 +135,23 @@ async function createVaultHandler(payload, deps, roundKey) {
     uri: "ipfs://placeholder-for-now",
     devMode: ENABLE_XRPL_DEV_FALLBACK
   });
+  // #region agent log
+  fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      runId: "pre-fix-1",
+      hypothesisId: "H3",
+      location: "src/contract/index.js:100",
+      message: "createVaultHandler mintUriToken resolved",
+      data: {
+        mintMode: manifestMint?.mode ?? null,
+        hasTokenId: !!manifestMint?.tokenId
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+  // #endregion
   // FUTURE: TEAM MODE - delegation could use URIToken ownership transfer
   // from creator to a managed vault authority account.
 
@@ -109,6 +164,23 @@ async function createVaultHandler(payload, deps, roundKey) {
   });
   persistState();
   auditLog("createVault", { owner: payload.owner, vaultId: vault.id, success: true });
+  // #region agent log
+  fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      runId: "pre-fix-1",
+      hypothesisId: "H3",
+      location: "src/contract/index.js:114",
+      message: "createVaultHandler success return",
+      data: {
+        vaultId: vault?.id ?? null,
+        createdAt: vault?.createdAt ?? null
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+  // #endregion
 
   return {
     vaultId: vault.id,
@@ -671,9 +743,62 @@ function auditLog(event, fields) {
 }
 
 export async function runContract({ requests, respond, runtimeContext = {}, deps = {} }) {
+  // #region agent log
+  fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      runId: "pre-fix-1",
+      hypothesisId: "H1",
+      location: "src/contract/index.js:673",
+      message: "runContract entry",
+      data: {
+        hasRequests: !!requests,
+        hasRespond: typeof respond === "function",
+        runtimeKeys: runtimeContext && typeof runtimeContext === "object" ? Object.keys(runtimeContext) : []
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+  // #endregion
   for await (const req of requests) {
     try {
+      // #region agent log
+      fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runId: "pre-fix-1",
+          hypothesisId: "H2",
+          location: "src/contract/index.js:675",
+          message: "runContract request received",
+          data: {
+            reqType: req?.type ?? null,
+            reqKeys: req && typeof req === "object" ? Object.keys(req) : [],
+            lclSeqNo: runtimeContext?.lclSeqNo ?? null
+          },
+          timestamp: Date.now()
+        })
+      }).catch(() => {});
+      // #endregion
       const result = await handleOperation(req, deps, runtimeContext);
+      // #region agent log
+      fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runId: "pre-fix-1",
+          hypothesisId: "H4",
+          location: "src/contract/index.js:677",
+          message: "runContract before respond success",
+          data: {
+            resultOk: result?.ok ?? null,
+            operation: result?.operation ?? null
+          },
+          timestamp: Date.now()
+        })
+      }).catch(() => {});
+      // #endregion
       await respond(result);
     } catch (error) {
       const safeError = error instanceof ContractError ? error : new ContractError(error.message, "UNEXPECTED_ERROR");
@@ -684,6 +809,24 @@ export async function runContract({ requests, respond, runtimeContext = {}, deps
         message: safeError.message
       });
       const errorId = crypto.createHash("sha256").update(`${safeError.code}:${safeError.message}`).digest("hex").slice(0, 12);
+      // #region agent log
+      fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runId: "pre-fix-1",
+          hypothesisId: "H2",
+          location: "src/contract/index.js:687",
+          message: "runContract catch before error respond",
+          data: {
+            reqType: req?.type ?? null,
+            code: safeError?.code ?? null,
+            message: safeError?.message ?? null
+          },
+          timestamp: Date.now()
+        })
+      }).catch(() => {});
+      // #endregion
       await respond({ ...toErrorResponse(safeError), errorId });
     }
   }
@@ -725,5 +868,164 @@ function validateWrappedKeys(wrappedKeys) {
     validateClassicAddress(item.address);
     assertBase64(item.encryptedKey, "wrappedKeys[].encryptedKey");
   }
+}
+
+async function bootstrapHotPocketRuntime() {
+  // Gate bootstrap to real HotPocket runtime only; avoids side effects in tests/tools.
+  if (process.stdin.isTTY) return;
+  if (!fs.existsSync("../patch.cfg")) return;
+
+  const hpargs = await readContractArgs();
+  // #region agent log
+  fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      runId: "post-bootstrap-2",
+      hypothesisId: "H9",
+      location: "src/contract/index.js:bootstrapHotPocketRuntime",
+      message: "hotpocket args parsed",
+      data: {
+        lclSeqNo: hpargs?.lcl_seq_no ?? null,
+        userKeyCount: hpargs?.users && typeof hpargs.users === "object" ? Object.keys(hpargs.users).length : 0
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+  // #endregion
+
+  const queue = await collectUserRequests(hpargs);
+  let cursor = 0;
+  await runContract({
+    requests: (async function* iter() {
+      for (const item of queue) {
+        if (item.request && typeof item.request === "object") {
+          yield item.request;
+        } else {
+          // #region agent log
+          fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              runId: "post-bootstrap-2",
+              hypothesisId: "H7",
+              location: "src/contract/index.js:bootstrapHotPocketRuntime",
+              message: "invalid input payload dropped",
+              data: {
+                parsedType: typeof item.request
+              },
+              timestamp: Date.now()
+            })
+          }).catch(() => {});
+          // #endregion
+        }
+      }
+    })(),
+    respond: async (payload) => {
+      const target = queue[cursor];
+      cursor += 1;
+      if (!target) return;
+      await sendUserOutput(target.outFd, payload);
+    },
+    runtimeContext: {
+      lclSeqNo: hpargs?.lcl_seq_no,
+      lclHash: hpargs?.lcl_hash,
+      roundKey: hpargs?.lcl_seq_no
+    },
+    deps: {}
+  });
+}
+
+bootstrapHotPocketRuntime().catch((error) => {
+  // #region agent log
+  fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      runId: "post-bootstrap-1",
+      hypothesisId: "H6",
+      location: "src/contract/index.js:bootstrapHotPocketRuntime",
+      message: "hotpocket bootstrap failed",
+      data: {
+        message: error?.message ?? String(error)
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+  // #endregion
+});
+
+async function readContractArgs() {
+  const argsJson = await new Promise((resolve, reject) => {
+    fs.readFile(process.stdin.fd, "utf8", (error, data) => {
+      if (error) reject(error);
+      else resolve(data);
+    });
+  });
+  return JSON.parse(argsJson);
+}
+
+async function collectUserRequests(hpargs) {
+  const queue = [];
+  const users = hpargs?.users && typeof hpargs.users === "object" ? hpargs.users : {};
+  const inputFd = hpargs?.user_in_fd;
+  for (const [publicKey, records] of Object.entries(users)) {
+    if (!Array.isArray(records) || records.length < 1) continue;
+    const outFd = records[0];
+    for (const input of records.slice(1)) {
+      if (!Array.isArray(input) || input.length < 2) continue;
+      const [offset, size] = input;
+      const raw = await readInputChunk(inputFd, offset, size);
+      let request = null;
+      try {
+        request = JSON.parse(raw.toString("utf8"));
+      } catch {
+        request = null;
+      }
+      queue.push({ publicKey, outFd, request });
+    }
+  }
+
+  // #region agent log
+  fetch("http://localhost:7248/ingest/f30d20fc-0a13-40e2-81bb-a66533c2c2bf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      runId: "post-bootstrap-2",
+      hypothesisId: "H9",
+      location: "src/contract/index.js:collectUserRequests",
+      message: "user requests loaded",
+      data: {
+        requestCount: queue.length
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+  // #endregion
+
+  return queue;
+}
+
+async function readInputChunk(fd, offset, size) {
+  const buffer = Buffer.alloc(size);
+  await new Promise((resolve, reject) => {
+    fs.read(fd, buffer, 0, size, offset, (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+  return buffer;
+}
+
+async function sendUserOutput(outFd, payload) {
+  const message = Buffer.from(JSON.stringify(payload));
+  const header = Buffer.alloc(4);
+  header.writeUInt32BE(message.byteLength);
+  await new Promise((resolve, reject) => {
+    fs.writev(outFd, [header, message], (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
 }
 

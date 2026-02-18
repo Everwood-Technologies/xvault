@@ -1,4 +1,4 @@
-const DEFAULT_GATEWAY = "https://your-gateway-name.quicknode-ipfs.com";
+const DEFAULT_GATEWAY = "https://grandfather-as-effect.quicknode-ipfs.com/ipfs";
 
 export function getGatewayBaseUrl() {
   const raw = process.env.QUICKNODE_GATEWAY || process.env.QUICKNODE_IPFS_GATEWAY || DEFAULT_GATEWAY;
