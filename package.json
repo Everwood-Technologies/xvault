@@ -1,7 +1,7 @@
 {
   "name": "xvault",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "license": "MIT",
   "description": "XVault decentralized key locker on Evernode/HotPocket + Xahau",
   "type": "module",

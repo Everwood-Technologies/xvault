@@ -10,8 +10,6 @@
 
 XVault is a decentralized key locker prototype built for Evernode/HotPocket consensus, with Xahau URI Tokens for on-ledger references and QuickNode IPFS for encrypted blob storage. The contract stores only metadata, authorization state, and content identifiers (CIDs); all sensitive cryptography (key derivation, encryption, key wrapping, and recovery share handling) is performed client-side.
 
-License: MIT (`LICENSE`). Replace `OWNER/REPO` badge placeholders after repository publishing.
-
 ## Key Features
 
 - Individual and team vault modes with deterministic contract state.
