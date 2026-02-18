@@ -3,10 +3,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 ![Node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white)
 ![Evernode HotPocket](https://img.shields.io/badge/Evernode-HotPocket-blue)
-[![CI](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/ci.yml?label=ci)](https://github.com/OWNER/REPO/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/mlwood-dev/xvault/ci.yml?label=ci)](https://github.com/OWNER/REPO/actions)
 [![Coverage](https://img.shields.io/badge/coverage-jest%20reported-informational)](https://github.com/OWNER/REPO/actions)
-![GitHub stars](https://img.shields.io/github/stars/OWNER/REPO?style=social)
-![GitHub forks](https://img.shields.io/github/forks/OWNER/REPO?style=social)
+![GitHub stars](https://img.shields.io/github/stars/mlwood-dev/xvault?style=social)
+![GitHub forks](https://img.shields.io/github/forks/mlwood-dev/xvault?style=social)
 
 XVault is a decentralized key locker prototype built for Evernode/HotPocket consensus, with Xahau URI Tokens for on-ledger references and QuickNode IPFS for encrypted blob storage. The contract stores only metadata, authorization state, and content identifiers (CIDs); all sensitive cryptography (key derivation, encryption, key wrapping, and recovery share handling) is performed client-side.
 
