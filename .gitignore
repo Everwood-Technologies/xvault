@@ -5,3 +5,4 @@ CHECKLIST.md
 .DS_Store
 /state
 .xvault-fixture/
+.xvault-unlock/

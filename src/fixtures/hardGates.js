@@ -102,3 +102,46 @@ export function assertRepoIsXvault(cwd = process.cwd()) {
     throw new Error("HG-REPO: fixture must run in Everwood-Technologies/xvault.");
   }
 }
+
+export function assertNoForbiddenPlaintext(surface, forbiddenPlaintext, gate = "HG-KILL-PLAINTEXT") {
+  const raw = typeof surface === "string" ? surface : JSON.stringify(surface);
+  for (const needle of forbiddenPlaintext) {
+    if (typeof needle === "string" && needle.length > 0 && raw.includes(needle)) {
+      throw new Error(`${gate}: surface contains forbidden plaintext.`);
+    }
+  }
+}
+
+export function assertListMetadataOnly(listed, forbiddenPlaintext = []) {
+  const raw = JSON.stringify(listed);
+  for (const vault of listed?.vaults ?? []) {
+    for (const entry of vault.entries ?? []) {
+      if (entry.password !== undefined || entry.secret !== undefined || entry.plaintext !== undefined) {
+        throw new Error("HG-CONTRACT-METADATA-ONLY: list entry includes plaintext secret fields.");
+      }
+      if (entry.encryptedBlob !== undefined) {
+        throw new Error("HG-CONTRACT-METADATA-ONLY: list entry includes encryptedBlob bytes.");
+      }
+      if (!entry.cid) {
+        throw new Error("HG-IPFS-CID: list entry missing CID.");
+      }
+      if (!entry.metadata || typeof entry.metadata !== "object") {
+        throw new Error("HG-CONTRACT-METADATA-ONLY: list entry missing metadata object.");
+      }
+    }
+  }
+  assertNoForbiddenPlaintext(raw, forbiddenPlaintext, "HG-KILL-PLAINTEXT");
+}
+
+export function assertFixtureHtmlCiphertextOnly(html, forbiddenPlaintext = []) {
+  if (typeof html !== "string" || html.length === 0) {
+    throw new Error("HG-DEMO-1-LOCKER: fixture-html dump is empty.");
+  }
+  if (!html.includes('data-ui-surface="fixture-html"') && !html.includes("xvault-ui-surface")) {
+    throw new Error("HG-DEMO-1-LOCKER: fixture-html surface is not named in the dump.");
+  }
+  if (!html.includes("AES-256-GCM") || !html.includes("ciphertext")) {
+    throw new Error("HG-DEMO-1-LOCKER: fixture-html must show ciphertext / envelope markers.");
+  }
+  assertNoForbiddenPlaintext(html, forbiddenPlaintext, "HG-DEMO-1-LOCKER");
+}

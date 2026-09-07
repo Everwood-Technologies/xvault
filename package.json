@@ -18,7 +18,9 @@
     "test": "vitest run --exclude \"test/**/*.jest.test.js\"",
     "test:watch": "vitest",
     "test:jest": "NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=8192' jest --runInBand --watchman=false",
-    "test:fixture:individual": "NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=8192' jest --runInBand --watchman=false test/fixtures/individual-create-add-list.jest.test.js"
+    "test:fixture:individual": "NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=8192' jest --runInBand --watchman=false test/fixtures/individual-create-add-list.jest.test.js",
+    "test:fixture:demo1-locker": "NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=8192' jest --runInBand --watchman=false test/fixtures/demo1-locker.jest.test.js",
+    "test:fixture:demo5-toolbelt": "NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=8192' jest --runInBand --watchman=false test/fixtures/demo5-toolbelt.jest.test.js"
   },
   "dependencies": {
     "@noble/curves": "latest",
