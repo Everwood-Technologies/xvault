@@ -117,12 +117,12 @@ console.log("Recovered:", ok);
 ## CLI Examples
 
 ```bash
-xvault create-vault --type individual
-xvault add-entry --vault <vault-id> --service github --username alice --password 'secret'
-xvault list
-xvault recovery-generate --vault <vault-id> --threshold 2 --total 3
-xvault revoke --vault <vault-id>
+xvault --fixture create-vault --type individual
+xvault --fixture add-entry --vault <vault-id> --service github --username alice --password "$ENTRY_PASSWORD"
+xvault --fixture list
 ```
+
+See `docs/individual-create-add-list-fixture.md`. Recovery generate and revoke are out of this individual slice.
 
 ## Cleanup
 

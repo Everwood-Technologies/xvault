@@ -49,14 +49,12 @@ describe("Contract handlers integration behavior", () => {
     const addPayload = {
       vaultId: created.data.vaultId,
       owner: owner.classicAddress,
-      encryptedBlob: Buffer.from("ciphertext").toString("base64"),
       cid: "bafybeigdyrztf4f6xsl54n4xq4m5gxezm5q4za2ojx6x7lf5y3w4f4xhqy",
       entryMetadata: { service: "github" }
     };
     const addSigPayload = {
       vaultId: created.data.vaultId,
       actor: owner.classicAddress,
-      encryptedBlob: addPayload.encryptedBlob,
       cid: addPayload.cid,
       entryMetadata: addPayload.entryMetadata,
       wrappedKeys: []
@@ -75,8 +73,71 @@ describe("Contract handlers integration behavior", () => {
     );
 
     expect(created.ok).toBe(true);
+    expect(created.data.network).toBe("testnet");
+    expect(created.data.uriTokenId).toBeTruthy();
     expect(added.data.cid).toBeTruthy();
     expect(added.data.tokenId).toBeTruthy();
+
+    const listed = await handleOperation({
+      type: "listEntries",
+      payload: {
+        vaultId: created.data.vaultId,
+        actor: owner.classicAddress,
+        signerPublicKey: owner.publicKey,
+        signature: signPayload(
+          {
+            vaultId: created.data.vaultId,
+            actor: owner.classicAddress,
+            action: "listEntries"
+          },
+          owner
+        )
+      }
+    });
+    expect(listed.data.entries).toHaveLength(1);
+    expect(listed.data.entries[0].cid).toBe(addPayload.cid);
+  });
+
+  test("addEntry rejects encryptedBlob on the contract path", async () => {
+    const { handleOperation } = await loadContract();
+    const owner = Wallet.generate();
+    const createPayload = {
+      type: "individual",
+      owner: owner.classicAddress,
+      salt: "aabbccddeeff0022",
+      metadata: {}
+    };
+    const created = await handleOperation(
+      {
+        type: "createVault",
+        payload: {
+          ...createPayload,
+          signerPublicKey: owner.publicKey,
+          signature: signPayload(createPayload, owner)
+        }
+      },
+      {},
+      { roundKey: "3" }
+    );
+
+    await expect(
+      handleOperation(
+        {
+          type: "addEntry",
+          payload: {
+            vaultId: created.data.vaultId,
+            owner: owner.classicAddress,
+            encryptedBlob: Buffer.from("ciphertext").toString("base64"),
+            cid: "bafybeigdyrztf4f6xsl54n4xq4m5gxezm5q4za2ojx6x7lf5y3w4f4xhqy",
+            entryMetadata: { service: "github" },
+            signerPublicKey: owner.publicKey,
+            signature: "00"
+          }
+        },
+        {},
+        { roundKey: "4" }
+      )
+    ).rejects.toThrow("encryptedBlob is not accepted");
   });
 
   test("team invite accept remove flow enforces access", async () => {

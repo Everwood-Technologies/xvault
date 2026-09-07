@@ -17,7 +17,6 @@
     "payload": {
       "vaultId": "vault-id-from-createVault",
       "owner": "rExampleOwnerClassicAddress",
-      "encryptedBlob": "QmFzZTY0RW5jcnlwdGVkQmxvYg==",
       "cid": "bafybeigdyrztf4f6xsl54n4xq4m5gxezm5q4za2ojx6x7lf5y3w4f4xhqy",
       "entryMetadata": {
         "service": "github.com",

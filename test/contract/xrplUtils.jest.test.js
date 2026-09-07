@@ -30,6 +30,7 @@ describe("xrplUtils transaction stubs", () => {
     });
     expect(result.mode).toBe("simulated");
     expect(result.tokenId).toBeTruthy();
+    expect(result.network).toBe("testnet");
   });
 
   test("burnUriToken supports submitted mode with mocked xrpl client", async () => {

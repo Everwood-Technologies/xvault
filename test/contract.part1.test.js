@@ -55,7 +55,6 @@ describe("Phase 2 contract handlers", () => {
         payload: {
           vaultId: created.vaultId,
           owner,
-          encryptedBlob: Buffer.from("ciphertext").toString("base64"),
           cid: "bafybeigdyrztf4f6xsl54n4xq4m5gxezm5q4za2ojx6x7lf5y3w4f4xhqy",
           entryMetadata: { service: "github", username: "mike" },
           signerPublicKey: "EDPUBKEY",
@@ -158,7 +157,6 @@ describe("Phase 2 contract handlers", () => {
           payload: {
             vaultId: created.vaultId,
             owner,
-            encryptedBlob: Buffer.from("ciphertext").toString("base64"),
             cid: "not-a-cid",
             entryMetadata: { service: "github" },
             signerPublicKey: "EDPUBKEY",

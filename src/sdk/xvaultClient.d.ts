@@ -36,6 +36,11 @@ export interface XVaultClientConfig {
   wsTimeoutMs?: number;
   wsFactory?: (url: string) => any;
   submitContractRequest?: (operation: { type: string; payload: object }) => Promise<any>;
+  ipfsClient?: {
+    uploadBlob: (data: Buffer | Blob | string, options?: object) => Promise<{ cid: string; size?: number }>;
+    unpinCid?: (cid: string) => Promise<boolean>;
+    getGatewayUrl: (cid: string, gatewayBase?: string) => string;
+  };
 }
 
 export interface XVaultClient {
@@ -44,10 +49,19 @@ export interface XVaultClient {
     initialAuthorized?: string[];
     recoveryThreshold?: number;
     recoveryTotal?: number;
-  }): Promise<{ vaultId: string; manifestTokenId: string }>;
-  addEntry(vaultId: string, entryData: EntryPayload): Promise<{ tokenId: string; cid: string }>;
+  }): Promise<{
+    vaultId: string;
+    manifestTokenId: string;
+    uriTokenId?: string;
+    saltHex: string;
+    mintMode?: string;
+    network: "testnet";
+  }>;
+  addEntry(vaultId: string, entryData: EntryPayload): Promise<{ tokenId: string; cid: string; network?: string }>;
   getEntry(vaultId: string, entryIndexOrTokenId: string | number): Promise<{ cid: string; gatewayUrl: string; metadata: object }>;
   listVaults(): Promise<VaultSummary[]>;
+  listEntries(vaultId: string): Promise<{ vaultId: string; network: string; entries: object[] }>;
+  list(options?: { vaultId?: string }): Promise<{ network: string; vaults: object[] }>;
   inviteToVault(vaultId: string, inviteeAddress: string): Promise<void>;
   acceptInvite(vaultId: string): Promise<void>;
   removeMember(vaultId: string, memberAddress: string): Promise<void>;

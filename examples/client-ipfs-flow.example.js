@@ -7,7 +7,7 @@
  *      Header: x-api-key: <QUICKNODE_IPFS_API_KEY>
  *    Receive { cid } from response.
  * 3) Submit signed addEntry request to XVault contract with:
- *      { vaultId, owner, encryptedBlob, cid, entryMetadata, signerPublicKey, signature }
+ *      { vaultId, owner, cid, entryMetadata, signerPublicKey, signature }
  * 4) Later, fetch retrieval metadata via signed getEntry request:
  *      { vaultId, owner, entryIndex|tokenId, signerPublicKey, signature }
  *    Receive { cid, metadata, gatewayUrl } from contract.

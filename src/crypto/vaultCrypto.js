@@ -10,6 +10,18 @@ const ARGON2_PARAMS = {
   hashLength: 32
 };
 
+/** Client-side crypto profile for hard-gate assertions (HG-CRYPTO-CLIENT). */
+export const CLIENT_CRYPTO_PROFILE = Object.freeze({
+  kdf: "argon2id",
+  aead: "AES-256-GCM",
+  aeadSubtleName: "AES-GCM",
+  keyLength: ARGON2_PARAMS.hashLength,
+  ivLength: 12,
+  tagLength: 128,
+  aad: "xvault:entry:v1",
+  argon2: Object.freeze({ ...ARGON2_PARAMS })
+});
+
 const HEX_REGEX = /^[0-9a-fA-F]+$/;
 const XRPL_ED25519_PUBKEY_REGEX = /^ED[0-9A-Fa-f]{64}$/;
 const XRPL_SECP256K1_PUBKEY_REGEX = /^(02|03)[0-9A-Fa-f]{64}$/;

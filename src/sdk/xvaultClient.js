@@ -49,6 +49,11 @@ const DEFAULT_RECOVERY_PREFIX = "xvault:recovery";
  * @property {number} [wsTimeoutMs]
  * @property {(url: string) => any} [wsFactory]
  * @property {(operation: { type: string, payload: object }) => Promise<any>} [submitContractRequest]
+ * @property {{
+ *   uploadBlob: (data: Buffer | Blob | string, options?: object) => Promise<{ cid: string, size?: number }>,
+ *   unpinCid?: (cid: string) => Promise<boolean>,
+ *   getGatewayUrl: (cid: string, gatewayBase?: string) => string
+ * }} [ipfsClient]
  */
 
 /**
@@ -67,7 +72,7 @@ export function createXVaultClient(config) {
         wsFactory: config.wsFactory
       });
   const submitContractRequest = config.submitContractRequest ?? ((op) => submitTransport.submit(op));
-  const ipfs = createIpfsClient({
+  const ipfs = config.ipfsClient ?? createIpfsClient({
     apiKey: config.quicknodeConfig.apiKey,
     apiBase: config.quicknodeConfig.apiBase,
     gateway: config.quicknodeConfig.gateway,
@@ -129,7 +134,11 @@ export function createXVaultClient(config) {
     vaultContext.set(data.vaultId, { type, saltHex });
     return {
       vaultId: data.vaultId,
-      manifestTokenId: data.manifestTokenId
+      manifestTokenId: data.manifestTokenId,
+      uriTokenId: data.uriTokenId ?? data.manifestTokenId,
+      saltHex,
+      mintMode: data.mintMode,
+      network: data.network ?? "testnet"
     };
   }
 
@@ -157,7 +166,6 @@ export function createXVaultClient(config) {
     const signPayload = {
       vaultId,
       actor: config.wallet.classicAddress,
-      encryptedBlob: prepared.encryptedBlob,
       cid: upload.cid,
       entryMetadata: prepared.entryMetadata,
       wrappedKeys: prepared.wrappedKeys ?? []
@@ -176,7 +184,8 @@ export function createXVaultClient(config) {
 
     return {
       tokenId: response.data?.tokenId,
-      cid: response.data?.cid ?? upload.cid
+      cid: response.data?.cid ?? upload.cid,
+      network: response.data?.network ?? "testnet"
     };
   }
 
@@ -228,6 +237,50 @@ export function createXVaultClient(config) {
       });
     }
     return summaries;
+  }
+
+  async function listEntries(vaultId) {
+    assertNonEmptyString(vaultId, "vaultId");
+    const signPayload = {
+      vaultId,
+      actor: config.wallet.classicAddress,
+      action: "listEntries"
+    };
+    const signature = await withSignature(signPayload, config.wallet.privateKey);
+    const response = await submitContractRequest({
+      type: "listEntries",
+      payload: {
+        vaultId,
+        actor: config.wallet.classicAddress,
+        signerPublicKey: config.wallet.publicKey,
+        signature
+      }
+    });
+    assertOkResponse(response, "listEntries");
+    return {
+      vaultId: response.data?.vaultId ?? vaultId,
+      network: response.data?.network ?? "testnet",
+      entries: Array.isArray(response.data?.entries) ? response.data.entries : []
+    };
+  }
+
+  async function list(options = {}) {
+    const vaults = await listVaults();
+    const filterId = options?.vaultId;
+    const selected = filterId ? vaults.filter((item) => item.vaultId === filterId) : vaults;
+    const withEntries = [];
+    for (const summary of selected) {
+      const listed = await listEntries(summary.vaultId);
+      withEntries.push({
+        ...summary,
+        network: listed.network,
+        entries: listed.entries
+      });
+    }
+    return {
+      network: "testnet",
+      vaults: withEntries
+    };
   }
 
   async function inviteToVault(vaultId, inviteeAddress) {
@@ -389,6 +442,8 @@ export function createXVaultClient(config) {
     addEntry,
     getEntry,
     listVaults,
+    listEntries,
+    list,
     inviteToVault,
     acceptInvite,
     removeMember,
