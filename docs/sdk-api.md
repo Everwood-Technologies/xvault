@@ -76,7 +76,7 @@ Creates a new vault (individual or team).
 ### Returns
 
 ```ts
-Promise<{ vaultId: string; manifestTokenId: string }>
+Promise<{ vaultId: string; manifestTokenId: string; uriTokenId?: string; saltHex: string; mintMode?: string; network: "testnet" }>
 ```
 
 ### Notes
@@ -86,7 +86,7 @@ Promise<{ vaultId: string; manifestTokenId: string }>
 
 ## `addEntry(vaultId, entryData)`
 
-Encrypts entry data client-side, uploads encrypted blob to IPFS, submits `addEntry` with CID.
+Encrypts entry data client-side, uploads encrypted blob to IPFS, submits `addEntry` with CID + metadata only (no encrypted blob bytes on the contract request).
 
 ### Parameters
 
@@ -129,6 +129,16 @@ Lists owner vault summaries from contract.
 
 ```ts
 Promise<VaultSummary[]>
+```
+
+## `listEntries(vaultId)` / `list({ vaultId? })`
+
+`listEntries` returns CID + metadata for one vault. `list` aggregates owner vaults and their entries so CLI `list` reflects the added entry.
+
+### Returns
+
+```ts
+Promise<{ network: string; vaults: Array<VaultSummary & { entries: object[] }> }>
 ```
 
 ## `inviteToVault(vaultId, inviteeAddress)`

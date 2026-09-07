@@ -65,7 +65,10 @@ npm install
 ```bash
 npm test
 npm run test:jest
+npm run test:fixture:individual
 ```
+
+The individual create-vault → add-entry → list fixture is documented in `docs/individual-create-add-list-fixture.md`. It uses mocked QuickNode IPFS, in-process HotPocket contract state, and a simulated Xahau **testnet** URI mint. Live Evernode/HotPocket deploy is out of this slice.
 
 ### Deployment and cluster validation
 
@@ -83,13 +86,12 @@ See `examples/sdk-usage.example.js` and `docs/usage-examples.md`.
 ### CLI usage
 
 ```bash
-xvault create-vault --type individual
-xvault add-entry --vault <vaultId> --service github --username alice --password 'secret'
-xvault list
-xvault revoke --vault <vaultId>
+xvault --fixture create-vault --type individual
+xvault --fixture add-entry --vault <vaultId> --service github --username alice --password "$ENTRY_PASSWORD"
+xvault --fixture list
 ```
 
-CLI supports configuration from local `.env` and `~/.xvault/config.json`.
+`revoke` remains out of this individual slice. CLI supports `--fixture` (see `docs/individual-create-add-list-fixture.md`) and, when live env is provided, configuration from `.env` and `~/.xvault/config.json`. Do not commit seeds, passwords, or API keys.
 
 ## Local Cluster Notes
 

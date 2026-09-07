@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 import crypto from "node:crypto";
 import fs from "node:fs";
-import { VaultState } from "./state.js";
+import { VaultState, buildVaultId } from "./state.js";
 import { loadStateFromFs, saveStateToFs } from "./stateStore.js";
 import { assertValidCid, buildGatewayFetchUrl } from "./cidUtils.js";
 import { getGatewayBaseUrl, isMutableUriTokensEnabled, isTeamModeEnabled } from "./config.js";
 import { ContractError, fail, toErrorResponse } from "./errors.js";
 import {
   DEFAULT_URI_ISSUER,
+  XAHAU_URI_NETWORK,
   assertBase64,
   burnUriToken,
   deriveSignerAddress,
@@ -16,6 +17,17 @@ import {
   validateHexSalt,
   verifySignedPayload
 } from "./xrplUtils.js";
+
+const FORBIDDEN_CONTRACT_FIELDS = Object.freeze([
+  "encryptedBlob",
+  "rootKey",
+  "masterPassword",
+  "password",
+  "secret",
+  "seed",
+  "privateKey",
+  "preimage"
+]);
 
 const OPS_PER_ROUND_LIMIT = 5;
 const DEFAULT_STATE_FILE = process.env.XVAULT_STATE_FILE ?? "./state/xvault-state.json";
@@ -58,6 +70,8 @@ export async function handleOperation(op, deps = {}, runtimeContext = {}) {
       return success(type, await addEntryHandler(payload, deps, roundKey));
     case "getMyVaults":
       return success(type, getMyVaultsHandler(payload));
+    case "listEntries":
+      return success(type, listEntriesHandler(payload));
     case "getEntry":
       return success(type, getEntryHandler(payload));
     case "stateDigest":
@@ -91,11 +105,12 @@ async function createVaultHandler(payload, deps, roundKey) {
   });
   enforceRateLimit(payload.owner, roundKey);
 
+  const vaultId = buildVaultId(payload.owner, payload.salt);
   const manifestMint = await mintUriToken({
     xrplClient: deps.xrplClient,
     multisigSigners: deps.multisigSigners ?? [],
     issuer: deps.uriIssuer ?? DEFAULT_URI_ISSUER,
-    uri: "ipfs://placeholder-for-now",
+    uri: `xvault:${XAHAU_URI_NETWORK}:manifest:${vaultId}`,
     devMode: ENABLE_XRPL_DEV_FALLBACK
   });
   // FUTURE: TEAM MODE - delegation could use URIToken ownership transfer
@@ -116,7 +131,9 @@ async function createVaultHandler(payload, deps, roundKey) {
     owner: vault.owner,
     createdAt: vault.createdAt,
     manifestTokenId: vault.manifestTokenId,
-    mintMode: manifestMint.mode
+    uriTokenId: vault.manifestTokenId,
+    mintMode: manifestMint.mode,
+    network: manifestMint.network ?? XAHAU_URI_NETWORK
   };
 }
 
@@ -171,7 +188,9 @@ async function createTeamVaultHandler(payload, deps, roundKey) {
     createdAt: vault.createdAt,
     manifestTokenId: vault.manifestTokenId,
     authorizedCount: vault.authorized.length,
-    mintMode: manifestMint.mode
+    mintMode: manifestMint.mode,
+    uriTokenId: vault.manifestTokenId,
+    network: manifestMint.network ?? XAHAU_URI_NETWORK
   };
 }
 
@@ -510,10 +529,11 @@ async function addEntryHandler(payload, deps, roundKey) {
   const actor = payload.actor ?? payload.owner;
   assertString(actor, "actor", 25, 40);
   validateClassicAddress(actor);
-  assertBase64(payload.encryptedBlob, "encryptedBlob");
+  rejectSensitiveContractFields(payload);
   if (typeof payload.cid !== "string") fail("cid must be a string.", "INVALID_INPUT");
   assertValidCid(payload.cid);
   assertObject(payload.entryMetadata, "entryMetadata");
+  rejectSensitiveContractFields(payload.entryMetadata, "entryMetadata");
   assertString(payload.entryMetadata.service, "entryMetadata.service", 1, 128);
   if (payload.entryMetadata.username !== undefined) {
     assertString(payload.entryMetadata.username, "entryMetadata.username", 1, 256);
@@ -527,13 +547,13 @@ async function addEntryHandler(payload, deps, roundKey) {
   // CLIENT RESPONSIBILITY: when team membership changes, client must re-encrypt
   // and re-upload entry blobs as needed for the new authorized set.
   // CLIENT RESPONSIBILITY: client computes wrappedKeys using recipients' Xahau
-  // public keys; contract only stores ciphertext references.
+  // public keys; contract only stores ciphertext references. Encrypted blob
+  // bytes stay on IPFS — contract records CID + metadata only.
 
   verifySignedPayload({
     payload: {
       vaultId: payload.vaultId,
       actor,
-      encryptedBlob: payload.encryptedBlob,
       cid: payload.cid,
       entryMetadata: payload.entryMetadata,
       wrappedKeys: payload.wrappedKeys ?? []
@@ -573,7 +593,38 @@ async function addEntryHandler(payload, deps, roundKey) {
     cid: entry.cid,
     createdAt: entry.createdAt,
     metadata: entry.metadata,
-    mintMode: entryMint.mode
+    mintMode: entryMint.mode,
+    network: entryMint.network ?? XAHAU_URI_NETWORK
+  };
+}
+
+function listEntriesHandler(payload) {
+  assertString(payload.vaultId, "vaultId", 8, 128);
+  const actor = payload.actor ?? payload.owner;
+  assertString(actor, "actor", 25, 40);
+  validateClassicAddress(actor);
+
+  verifySignedPayload({
+    payload: {
+      vaultId: payload.vaultId,
+      actor,
+      action: "listEntries"
+    },
+    signature: payload.signature,
+    signerPublicKey: payload.signerPublicKey,
+    expectedAddress: actor
+  });
+
+  const entries = state.listEntries({
+    vaultId: payload.vaultId,
+    actor
+  });
+  auditLog("listEntries", { owner: actor, vaultId: payload.vaultId, success: true });
+
+  return {
+    vaultId: payload.vaultId,
+    network: XAHAU_URI_NETWORK,
+    entries
   };
 }
 
@@ -714,6 +765,18 @@ function validateAddressArray(values, fieldName) {
   for (const address of values) {
     assertString(address, `${fieldName}[]`, 25, 40);
     validateClassicAddress(address);
+  }
+}
+
+function rejectSensitiveContractFields(payload, label = "payload") {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return;
+  for (const field of FORBIDDEN_CONTRACT_FIELDS) {
+    if (payload[field] !== undefined) {
+      fail(
+        `${label}.${field} is not accepted on the contract path; send CID and metadata only.`,
+        "SENSITIVE_FIELD_REJECTED"
+      );
+    }
   }
 }
 

@@ -34,7 +34,7 @@ Error responses:
   - signer address match against expected actor/owner
 - Address fields are validated as Xahau classic addresses.
 - CID fields are validated (v0/v1 format support via regex checks).
-- `encryptedBlob` and wrapped keys are validated as base64.
+- Encrypted blob bytes are **rejected** on the contract path (`SENSITIVE_FIELD_REJECTED`). Wrapped keys (team ciphertext references) are validated as base64.
 - Per-round rate limit for mutating handlers: max 5 operations per address per round.
 
 ## Handlers
@@ -74,7 +74,9 @@ Creates an individual vault.
   "owner": "r...",
   "createdAt": "round-key",
   "manifestTokenId": "token-id",
-  "mintMode": "simulated|submitted|simulated_fallback"
+  "uriTokenId": "token-id",
+  "mintMode": "simulated|submitted|simulated_fallback",
+  "network": "testnet"
 }
 ```
 
@@ -299,7 +301,6 @@ Adds encrypted entry metadata and CID reference.
   "payload": {
     "vaultId": "vault-id",
     "actor": "rACTOR...",
-    "encryptedBlob": "base64...",
     "cid": "bafy...",
     "entryMetadata": {
       "service": "github",
@@ -318,7 +319,7 @@ Adds encrypted entry metadata and CID reference.
 ### Key validations
 
 - Actor defaults to `owner` if absent for backward compatibility.
-- `encryptedBlob` base64 + size checks.
+- `encryptedBlob`, passwords, seeds, and key material are rejected.
 - CID format checks.
 - `entryMetadata.service` required.
 - `wrappedKeys` array item schema/size checks.
@@ -393,6 +394,42 @@ Reads entry metadata by index or token id.
     "notes": null
   },
   "gatewayUrl": "https://<gateway>/ipfs/bafy..."
+}
+```
+
+## `listEntries`
+
+Lists entry metadata and CIDs for a vault (no blob bytes, no key material).
+
+### Input example
+
+```json
+{
+  "type": "listEntries",
+  "payload": {
+    "vaultId": "vault-id",
+    "actor": "rACTOR...",
+    "signerPublicKey": "02...",
+    "signature": "3045..."
+  }
+}
+```
+
+### Output data
+
+```json
+{
+  "vaultId": "vault-id",
+  "network": "testnet",
+  "entries": [
+    {
+      "index": 0,
+      "cid": "bafy...",
+      "tokenId": "entry-uri-token-id",
+      "metadata": { "service": "github", "username": "alice", "notes": null },
+      "createdAt": "2"
+    }
+  ]
 }
 ```
 

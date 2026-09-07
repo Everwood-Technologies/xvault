@@ -52,8 +52,8 @@ export async function runSdkUsageExample() {
     });
     console.log("Entry added:", added);
 
-    const vaults = await client.listVaults();
-    console.log("Vault summaries:", vaults);
+    const listed = await client.list();
+    console.log("Vaults and entries:", listed);
 
     await client.revokeVault(created.vaultId);
     console.log("Vault revoked:", created.vaultId);

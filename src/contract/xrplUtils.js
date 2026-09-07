@@ -10,6 +10,8 @@ import { fail } from "./errors.js";
 
 export const URITOKEN_BURNABLE_FLAG = 0x00000001;
 export const DEFAULT_URI_ISSUER = "rMsiGfHZDxtj9Y4SSn6Fp5f8n3pHZ3GXXQ";
+/** Fixture and current mint path are Xahau testnet only. Never label mainnet. */
+export const XAHAU_URI_NETWORK = "testnet";
 
 export function validateClassicAddress(address) {
   if (typeof address !== "string" || address.length < 25 || address.length > 40) {
@@ -136,6 +138,7 @@ export async function mintUriToken({
     return {
       tokenId: simulatedTokenId,
       mode: "simulated",
+      network: XAHAU_URI_NETWORK,
       tx
     };
   }
@@ -149,6 +152,7 @@ export async function mintUriToken({
     return {
       tokenId: submitResult?.result?.meta?.uritoken_id ?? null,
       mode: "submitted",
+      network: XAHAU_URI_NETWORK,
       txHash: submitResult?.result?.hash ?? null,
       tx: prepared
     };
@@ -162,6 +166,7 @@ export async function mintUriToken({
       return {
         tokenId: simulatedTokenId,
         mode: "simulated_fallback",
+        network: XAHAU_URI_NETWORK,
         tx
       };
     }

@@ -61,4 +61,27 @@ describe("VaultState schema and mutations", () => {
     });
     expect(vault.authorized).not.toContain("rInvitee");
   });
+
+  test("listEntries returns cid metadata without blob bytes", () => {
+    const state = new VaultState();
+    const vault = state.createVault({
+      owner: "rOwner",
+      salt: "aabbccddeeff0099",
+      createdAt: "1",
+      manifestTokenId: "manifest-9"
+    });
+    state.addEntry({
+      vaultId: vault.id,
+      actor: "rOwner",
+      cid: "bafybeigdyrztf4f6xsl54n4xq4m5gxezm5q4za2ojx6x7lf5y3w4f4xhqy",
+      entryMetadata: { service: "github", username: "alice" },
+      createdAt: "2",
+      tokenId: "entry-token-9"
+    });
+    const entries = state.listEntries({ vaultId: vault.id, actor: "rOwner" });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].cid).toBe("bafybeigdyrztf4f6xsl54n4xq4m5gxezm5q4za2ojx6x7lf5y3w4f4xhqy");
+    expect(entries[0].encryptedBlob).toBeUndefined();
+    expect(JSON.stringify(state.snapshot())).not.toContain("encryptedBlob");
+  });
 });

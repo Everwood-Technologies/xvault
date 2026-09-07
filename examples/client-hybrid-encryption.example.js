@@ -55,7 +55,6 @@ export async function runTeamFlowExample() {
   const addEntryPayload = {
     vaultId: "team-vault-id",
     actor: "rExampleMemberClassicAddress1",
-    encryptedBlob: prepared.encryptedBlob,
     entryMetadata: prepared.entryMetadata,
     cid,
     wrappedKeys: prepared.wrappedKeys

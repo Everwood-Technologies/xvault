@@ -73,6 +73,19 @@ export class VaultState {
     return entry;
   }
 
+  listEntries({ vaultId, actor, owner }) {
+    const vault = this.requireVault(vaultId);
+    const principal = actor ?? owner;
+    this.assertReadAccess(vault, principal);
+    return vault.entries.map((entry, index) => ({
+      index,
+      cid: entry.cid,
+      tokenId: entry.tokenId,
+      metadata: entry.metadata,
+      createdAt: entry.createdAt
+    }));
+  }
+
   getMyVaults(owner, since = null) {
     return Object.values(this.vaults)
       .filter((vault) => vault.owner === owner)

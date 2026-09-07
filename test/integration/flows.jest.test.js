@@ -62,7 +62,6 @@ describe("Integration flows (in-memory simulation)", () => {
         payload: {
           vaultId: created.data.vaultId,
           owner: owner.classicAddress,
-          encryptedBlob: prepared.encryptedBlob,
           entryMetadata: prepared.entryMetadata,
           cid: prepared.cid,
           signerPublicKey: owner.publicKey,
@@ -70,7 +69,6 @@ describe("Integration flows (in-memory simulation)", () => {
             {
               vaultId: created.data.vaultId,
               actor: owner.classicAddress,
-              encryptedBlob: prepared.encryptedBlob,
               cid: prepared.cid,
               entryMetadata: prepared.entryMetadata,
               wrappedKeys: []
@@ -102,6 +100,26 @@ describe("Integration flows (in-memory simulation)", () => {
       }
     });
     expect(fetched.data.cid).toBe(prepared.cid);
+
+    const listed = await handleOperation({
+      type: "listEntries",
+      payload: {
+        vaultId: created.data.vaultId,
+        actor: owner.classicAddress,
+        signerPublicKey: owner.publicKey,
+        signature: signPayload(
+          {
+            vaultId: created.data.vaultId,
+            actor: owner.classicAddress,
+            action: "listEntries"
+          },
+          owner
+        )
+      }
+    });
+    expect(listed.data.entries).toHaveLength(1);
+    expect(listed.data.entries[0].cid).toBe(prepared.cid);
+    expect(listed.data.network).toBe("testnet");
 
     const envelope = JSON.parse(Buffer.from(prepared.encryptedBlob, "base64").toString("utf8"));
     const key = await webcrypto.subtle.importKey("raw", rootKey, "AES-GCM", false, ["decrypt"]);
@@ -189,7 +207,6 @@ describe("Integration flows (in-memory simulation)", () => {
         payload: {
           vaultId: team.data.vaultId,
           actor: member.classicAddress,
-          encryptedBlob: prepared.encryptedBlob,
           entryMetadata: prepared.entryMetadata,
           cid: prepared.cid,
           wrappedKeys: prepared.wrappedKeys,
@@ -198,7 +215,6 @@ describe("Integration flows (in-memory simulation)", () => {
             {
               vaultId: team.data.vaultId,
               actor: member.classicAddress,
-              encryptedBlob: prepared.encryptedBlob,
               cid: prepared.cid,
               entryMetadata: prepared.entryMetadata,
               wrappedKeys: prepared.wrappedKeys

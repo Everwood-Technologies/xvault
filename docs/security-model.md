@@ -21,9 +21,9 @@ Out of scope for current implementation:
 
 Core invariants:
 
-1. Plaintext secret material is encrypted client-side before contract submission.
+1. Plaintext secret material is encrypted client-side; the contract accepts CID + metadata only (encrypted blob bytes stay on IPFS).
 2. Contract stores only metadata, CIDs, wrapped keys, and authorization state.
-3. Contract never decrypts entries and never receives master passwords or root keys.
+3. Contract never decrypts entries and never receives master passwords, root keys, or encrypted blob bytes.
 4. Recovery shares and secrets are generated/combined client-side only.
 
 Entry confidentiality:
