@@ -102,6 +102,46 @@ export async function encryptEntry(data, rootKey) {
 }
 
 /**
+ * Decrypt an AES-256-GCM entry envelope produced by encryptEntry.
+ * Fixture / local-unlock helper only — not a shipped product unlock CLI.
+ *
+ * @param {{ciphertext: string, iv: string, tag: string, alg?: string}} envelope
+ * @param {Uint8Array} rootKey
+ * @returns {Promise<object>}
+ */
+export async function decryptEntry(envelope, rootKey) {
+  assertObject(envelope, "envelope");
+  assertBytes(rootKey, 32, "rootKey");
+  if (envelope.alg && envelope.alg !== CLIENT_CRYPTO_PROFILE.aead) {
+    throw createCryptoError("INVALID_ENVELOPE", "envelope.alg must be AES-256-GCM.");
+  }
+  if (!envelope.ciphertext || !envelope.iv || !envelope.tag) {
+    throw createCryptoError("INVALID_ENVELOPE", "envelope is missing ciphertext, iv, or tag.");
+  }
+
+  const cryptoApi = getCryptoApi();
+  const iv = base64ToBytes(envelope.iv);
+  const tag = base64ToBytes(envelope.tag);
+  const ciphertext = base64ToBytes(envelope.ciphertext);
+  const merged = new Uint8Array(ciphertext.length + tag.length);
+  merged.set(ciphertext, 0);
+  merged.set(tag, ciphertext.length);
+
+  const cryptoKey = await cryptoApi.subtle.importKey("raw", rootKey, "AES-GCM", false, ["decrypt"]);
+  const aad = encodeUtf8(CLIENT_CRYPTO_PROFILE.aad);
+  const plain = new Uint8Array(
+    await cryptoApi.subtle.decrypt(
+      { name: "AES-GCM", iv, additionalData: aad, tagLength: CLIENT_CRYPTO_PROFILE.tagLength },
+      cryptoKey,
+      merged
+    )
+  );
+  const text = new TextDecoder().decode(plain);
+  zeroize(plain);
+  return JSON.parse(text);
+}
+
+/**
  * Generate a random per-entry symmetric key.
  *
  * @returns {Promise<Uint8Array>}
@@ -373,5 +413,10 @@ function hexToBytes(hex) {
 
 function bytesToBase64(bytes) {
   return Buffer.from(bytes).toString("base64");
+}
+
+function base64ToBytes(value) {
+  assertNonEmptyString(value, "base64");
+  return new Uint8Array(Buffer.from(value, "base64"));
 }
 

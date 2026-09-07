@@ -66,9 +66,13 @@ npm install
 npm test
 npm run test:jest
 npm run test:fixture:individual
+npm run test:fixture:demo1-locker
+npm run test:fixture:demo5-toolbelt
 ```
 
 The individual create-vault → add-entry → list fixture is documented in `docs/individual-create-add-list-fixture.md`. It uses mocked QuickNode IPFS, in-process HotPocket contract state, and a simulated Xahau **testnet** URI mint. Live Evernode/HotPocket deploy is out of this slice.
+
+Acceptance demos **1** (dev secrets locker, UI surface `fixture-html`) and **5** (agent toolbelt / encrypted env blobs) are documented in `docs/demo1-locker-fixture.md` and `docs/demo5-toolbelt-fixture.md`. Demos 2–4 are not in this slice. Fixture PASS is HOLD; unlock is not shipped.
 
 ### Deployment and cluster validation
 
@@ -117,6 +121,8 @@ Warning: Use testnet first; mainnet deployment requires audit.
 - Security assumptions and invariants: `docs/security-model.md`
 - Deployment guidance (dev + production): `docs/deployment.md`
 - Audit preparation workspace: `docs/audit-prep.md`
+- Demo 1 locker (`fixture-html`): `docs/demo1-locker-fixture.md`
+- Demo 5 agent toolbelt: `docs/demo5-toolbelt-fixture.md`
 - Open-source release checklist: `CHECKLIST.md`
 - Contribution guide: `CONTRIBUTING.md`
 - Security disclosure policy: `SECURITY.md`

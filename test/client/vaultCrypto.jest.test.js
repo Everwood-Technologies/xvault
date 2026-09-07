@@ -3,6 +3,7 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 import { describe, expect, test } from "@jest/globals";
 import {
   constantTimeEqual,
+  decryptEntry,
   deriveRootKey,
   encryptEntry,
   prepareEntryPayload,
@@ -35,6 +36,9 @@ describe("vaultCrypto client module", () => {
     );
     const parsed = JSON.parse(Buffer.from(plaintext).toString("utf8"));
     expect(parsed.secret).toBe("top-secret");
+
+    const viaHelper = await decryptEntry({ ...encrypted, alg: "AES-256-GCM" }, rootKey);
+    expect(viaHelper.secret).toBe("top-secret");
   });
 
   test("wrapKeyForUser produces decryptable wrapped key envelope", async () => {
